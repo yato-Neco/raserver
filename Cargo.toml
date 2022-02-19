@@ -9,6 +9,14 @@ edition = "2021"
 serde = {version = "1.0.133",features = ["derive"]}
 serde_derive = "1.0.133"
 serde_json = "1.0.59"
-actix-web = "3.3.3"
+actix-web = "4.0.0-beta.5"
+tokio = { version = "1", features = ["full"] }
 colored = "2"
 serialport = "4.0.0"
+rodio = "0.15.0"
+cpal = "0.13.5"
+anyhow = "1.0.12"
+hound = "3.4"
+clap = { version = "3", default-features = false, features = ["std"] }
+reqwest = "0.11.9"
+async-trait = "0.1.52"
