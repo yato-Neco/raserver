@@ -2,9 +2,13 @@ mod models;
 #[warn(unused_imports)]
 use std::io;
 use std::collections::HashMap;
+use actix_cors::Cors;
 
 use models::req::{ReqJsonInput,ReqJsonSenser};
-use actix_web::{get,post,web,App,HttpResponse,HttpServer,Responder,HttpRequest};
+use actix_web::{http,get,post,web,App,HttpResponse,HttpServer,Responder,HttpRequest,Result};
+use actix_web::http::header;
+use actix_web::middleware::Logger;
+
 mod serial;
 //use serial::{Inf,Serial};
 mod senser;
@@ -46,8 +50,9 @@ fn sread(serial_inf:Inf){
 #[post("/input")]
 async fn input_index(data: web::Json<ReqJsonInput>,reqwests_post:web::Data<Inf>)->impl Responder{
 
-    //println!("{:?}",data);
+    println!("{:?}",data);
 
+    /*
     match data.input.as_str() {
         "w" => reqwests_post.req("w").await,
         "a" => reqwests_post.req("a").await,
@@ -55,7 +60,7 @@ async fn input_index(data: web::Json<ReqJsonInput>,reqwests_post:web::Data<Inf>)
         "s" => reqwests_post.req("s").await,
         _ => (),
     }
-    
+    */
 
     HttpResponse::Ok().body("ok")
 }
@@ -108,8 +113,9 @@ async fn main()->std::io::Result<()>{
 
     });
 
-*/
+*/  
 
+    std::env::set_var("RUST_LOG", "actix_web=info");
 
     let mut ip_:String = String::new();
 
@@ -118,12 +124,23 @@ async fn main()->std::io::Result<()>{
     HttpServer::new(move ||{
         //let serial_inf = Inf {port:port_.trim().to_string(),speed:SPEED_,};
         let reqwests_post = Inf {ip:ip_.trim().to_string()};
+        let cors = Cors::default()
+            .allowed_origin_fn(|origin, _req_head| {
+                true
+            })
+            .allowed_methods(vec!["GET", "POST"])
+            .allowed_headers(vec![header::AUTHORIZATION, header::ACCEPT])
+            .allowed_header(header::CONTENT_TYPE)
+            .supports_credentials()
+            .max_age(3600);
+
         App::new()
+        .wrap(cors)
         .data(reqwests_post)
         .service(input_index)
         .service(senser_index)
     })
-    .bind("0.0.0.0:8080")?
+    .bind("0.0.0.0:8081")?
     .run()
     .await
 }
