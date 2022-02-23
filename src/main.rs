@@ -1,13 +1,21 @@
 mod models;
 #[warn(unused_imports)]
+use std::net::ToSocketAddrs;
 use std::io;
 use std::collections::HashMap;
 use actix_cors::Cors;
+use std::net::TcpStream;
+use std::io::BufWriter;
+
+
 
 use models::req::{ReqJsonInput,ReqJsonSenser};
 use actix_web::{http,get,post,web,App,HttpResponse,HttpServer,Responder,HttpRequest,Result};
 use actix_web::http::header;
 use actix_web::middleware::Logger;
+
+
+mod socket;
 
 mod serial;
 //use serial::{Inf,Serial};
@@ -52,15 +60,16 @@ async fn input_index(data: web::Json<ReqJsonInput>,reqwests_post:web::Data<Inf>)
 
     println!("{:?}",data);
 
-    /*
+    
     match data.input.as_str() {
         "w" => reqwests_post.req("w").await,
         "a" => reqwests_post.req("a").await,
         "d" => reqwests_post.req("d").await,
         "s" => reqwests_post.req("s").await,
+        "stop" => reqwests_post.req(" ").await,
         _ => (),
     }
-    */
+    
 
     HttpResponse::Ok().body("ok")
 }
@@ -121,26 +130,61 @@ async fn main()->std::io::Result<()>{
 
     io::stdin().read_line(&mut ip_).expect("Failed to read line");
 
-    HttpServer::new(move ||{
-        //let serial_inf = Inf {port:port_.trim().to_string(),speed:SPEED_,};
-        let reqwests_post = Inf {ip:ip_.trim().to_string()};
-        let cors = Cors::default()
-            .allowed_origin_fn(|origin, _req_head| {
-                true
-            })
-            .allowed_methods(vec!["GET", "POST"])
-            .allowed_headers(vec![header::AUTHORIZATION, header::ACCEPT])
-            .allowed_header(header::CONTENT_TYPE)
-            .supports_credentials()
-            .max_age(3600);
+    let mut tmp = format!("{}:{}",ip_,8888);
 
-        App::new()
-        .wrap(cors)
-        .data(reqwests_post)
-        .service(input_index)
-        .service(senser_index)
-    })
-    .bind("0.0.0.0:8081")?
-    .run()
-    .await
+
+    let mut addrs = tmp.to_socket_addrs().unwrap();
+
+
+
+  
+    if let Some(addr) = addrs.find(|x| (*x).is_ipv4()) {
+      match TcpStream::connect(addr) {
+        Err(_) => {
+          println!("Connection NG.");
+        }
+        Ok(stream) => {
+          println!("Connection Ok.");
+          let mut writer = BufWriter::new(&stream);
+          HttpServer::new(move ||{
+            //let serial_inf = Inf {port:port_.trim().to_string(),speed:SPEED_,};
+            
+            let cors = Cors::default()
+                .allowed_origin_fn(|origin, _req_head| {
+                    true
+                })
+                .allowed_methods(vec!["GET", "POST"])
+                .allowed_headers(vec![header::AUTHORIZATION, header::ACCEPT])
+                .allowed_header(header::CONTENT_TYPE)
+                .supports_credentials()
+                .max_age(3600);
+    
+            App::new()
+            .wrap(cors)
+            .data(writer)
+            .service(input_index)
+            .service(senser_index)
+        })
+        .bind("0.0.0.0:8081")
+        .run()
+        .await
+
+        }
+      }
+    } else {
+      eprintln!("Invalid Host:Port Number");
+    }
+
+
+    println!("{:?}",addrs);
+
+    /*
+    let reqwests_post = socket::Inf {
+        ip_port:ip:ip_.trim().to_string(),
+        writer:
+
+    };
+    */
+
+    
 }
