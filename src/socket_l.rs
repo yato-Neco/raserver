@@ -1,29 +1,70 @@
 use std::net::TcpStream;
 use std::io::BufWriter;
+use std::io::Write;
+use std::net::ToSocketAddrs;
 
 pub struct Inf {
     pub ip_port: String,
-    pub writer: BufWriter<TcpStream>,
 }
 
 
 
 pub trait Socketsp {
-  fn sokect_write(&self,txt:&str) -> std::io::Result<()>;
+
+  //fn default() -> Self;
+
+  type Item;
+  fn init(&self) ->  Self::Item;
+
+  //fn test(&self) -> Self;
+
+  fn sokect_write(&self,txt:&str);
 }
 
 impl Socketsp for Inf {
-    fn sokect_write(&self,txt:&str) -> std::io::Result<()> {
+
+  type Item = TcpStream;
+
+
+/*
+  fn default() -> Self {
+    Self {
+      ip_port:"172.0.0.1".to_owned(),
+      
+    }
+  }
+
+*/
+    fn init(&self) -> Self::Item {
+
+    
+    let mut tmp = format!("{}:{}",&self.ip_port.trim(),9999);
+
+
+    let mut addrs = tmp.to_socket_addrs().unwrap();
+
+
+    
+
+    TcpStream::connect(tmp).unwrap()
+    
+
+    
+  }
+
+
+    fn sokect_write(&self,txt:&str) {
         let msg = format!("{}", txt);
-        &self.writer.write(msg.as_bytes()).expect("SEND FAILURE!!!");
-        &self.writer.flush().unwrap();
-        Ok(())
+        let mut _writer = BufWriter::new(self.init());
+        _writer.write(msg.as_bytes()).expect("SEND FAILURE!!!");
+
+        //&self.writer.flush().unwrap();
     }
 
 }
 
 
-
+/*
 
 fn sokect() {
     let host_and_port = format!("{}:{}", host, port);
@@ -47,3 +88,5 @@ fn sokect() {
       eprintln!("Invalid Host:Port Number");
     }
   }
+
+  */

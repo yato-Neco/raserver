@@ -9,6 +9,23 @@ pub struct ReqJsonInput {
 }
 
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ReqJsonInputnew {
+    pub power: usize,
+    pub direction:isize,
+    pub stop: usize,
+}
+
+
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ReqJsonInputnewad {
+    pub power: usize,
+    pub direction:isize,
+    pub stop: usize,
+    pub rotate: isize,
+}
+
 
 #[warn(dead_code)]
 pub struct Input <'a> {
